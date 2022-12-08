@@ -61,7 +61,7 @@ const main = async () => {
     app.use(`${routerPath}`, expressRouterWrapper.getRouter())
   }
 
-  const port = parseInt(<string>process.env.SERVER_PORT) || 8000
+  const port = parseInt(<string>process.env.SERVER_PORT) || 8083
   const httpServer: Server = http.createServer(app)
 
   // socket routes
@@ -72,7 +72,7 @@ const main = async () => {
   // ]
   // const wss: WebSocketServer = setupWebSocketServer(httpServer, wssRoutes, serviceOptions)
 
-  setupSocketIoDeviceServer(httpServer, '/socket-device/')
+  setupSocketIoDeviceServer(httpServer, '/socket-hub/')
 
   process.on('SIGINT', () => {
     console.warn('Received interrupt, shutting down')

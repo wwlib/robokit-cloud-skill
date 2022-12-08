@@ -28,12 +28,12 @@ export class ExampleHandlers {
 
   public postHandler: Handler = async (req: AuthRequest, res: Response) => {
     console.info('ExampleHandler: req.body:', req.body)
-    const utterance = req.body?.utterance
+    const message = req.body?.message
     let accountId = '';
     if (req.auth && req.auth.accessTokenPayload) {
       accountId = req.auth.accessTokenPayload.accountId
     }
-    const result = { status: 'OK', utterance: utterance || 'na', accountId }
+    const result = { status: 'OK', message: message || 'na', accountId }
     res.status(StatusCodes.OK).json(result)
   }
 }

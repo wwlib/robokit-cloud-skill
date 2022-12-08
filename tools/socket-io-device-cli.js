@@ -10,7 +10,7 @@ const rcs = require('robokit-command-system')
 dotenv.config();
 
 /*
-curl --location --request POST 'http://localhost:8000/auth' \
+curl --location --request POST 'http://localhost:8083/auth' \
      --header 'Content-Type: application/json' \
      --data-raw '{
        "accountId": "device1",
@@ -148,7 +148,7 @@ function connect(token) {
     });
 
     socket.on('message', function (data) {
-        console.log(data.message);
+        console.log(data.message, data.data);
         ask("> ");
     });
 

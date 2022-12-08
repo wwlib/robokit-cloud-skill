@@ -43,9 +43,11 @@ export const setupSocketIoDeviceServer = (httpServer: HTTPServer, path: string):
         socket.emit('message', { message: 'A new DEVICE has joined!' })
 
         socket.on('command', (command: RCSCommand) => {
-            console.log(`DeviceServer: on command:`, socket.id, socket.data.accountId, command)
-            ConnectionManager.getInstance().onConnectionEvent(ConnectionType.DEVICE, socket, ConnectionEventType.COMMAND_FROM)
-            ConnectionManager.getInstance().onConnectionEvent(ConnectionType.CONTROLLER, socket, ConnectionEventType.COMMAND_TO)
+            if (command.type !== 'sync') {
+                console.log(`DeviceServer: on command:`, socket.id, socket.data.accountId, command)
+            }
+            ConnectionManager.getInstance().onAnalyticsEvent(ConnectionType.DEVICE, socket, ConnectionEventType.COMMAND_FROM)
+            ConnectionManager.getInstance().onAnalyticsEvent(ConnectionType.CONTROLLER, socket, ConnectionEventType.COMMAND_TO)
             if (command.type === RCSCommandType.sync && command.name === RCSCommandName.syncOffset) {
                 if (command.payload && typeof command.payload.syncOffset === 'number' ) {
                     if (connection) {
@@ -60,55 +62,16 @@ export const setupSocketIoDeviceServer = (httpServer: HTTPServer, path: string):
 
         socket.on('message', (message: string) => {
             console.log(`on message: ${message}`, socket.id, socket.data.accountId)
-            ConnectionManager.getInstance().onConnectionEvent(ConnectionType.DEVICE, socket, ConnectionEventType.MESSAGE_FROM)
-            ConnectionManager.getInstance().onConnectionEvent(ConnectionType.CONTROLLER, socket, ConnectionEventType.MESSAGE_TO)
+            ConnectionManager.getInstance().onAnalyticsEvent(ConnectionType.DEVICE, socket, ConnectionEventType.MESSAGE_FROM)
+            ConnectionManager.getInstance().onAnalyticsEvent(ConnectionType.CONTROLLER, socket, ConnectionEventType.MESSAGE_TO)
             ConnectionManager.getInstance().broadcastDeviceMessageToSubscriptionsWithAccountId(socket.data.accountId, { message: message })
-            socket.emit('message', { message: 'sent', data: message })
+            socket.emit('message', { message: 'echo', data: message })
         })
 
         socket.once('disconnect', function (reason: string) {
             console.log(`on DEVICE disconnect: ${reason}: ${socket.id}`)
             ConnectionManager.getInstance().removeConnection(ConnectionType.DEVICE, socket)
         })
-
-        // ASR streaming
-
-        // const asrConfig: ASRStreamingSessionConfig = {
-        //     lang: 'en-US',
-        //     hints: undefined,
-        //     regexpEOS: undefined,
-        //     maxSpeechTimeout: 60 * 1000,
-        //     eosTimeout: 2000,
-        //     providerConfig: {
-        //         AzureSpeechSubscriptionKey: process.env.AZURE_SPEECH_SUBSCRIPTION_KEY || "<YOUR-AZURE-SUBSCRIPTION-KEY>",
-        //         AzureSpeechTokenEndpoint: process.env.AZURE_SPEECH_TOKEN_ENDPOINT || "https://azurespeechserviceeast.cognitiveservices.azure.com/sts/v1.0/issuetoken",
-        //         AzureSpeechRegion: process.env.AZURE_SPEECH_REGION || "eastus",
-        //     }
-        // }
-        // let asrSessionHandler: ASRSessionHandler
-
-        // socket.on('asrAudioStart', () => {
-        //     console.log(`on asrAudioStart`)
-        //     if (connection) {
-        //         asrSessionHandler = new ASRSessionHandler(connection, asrConfig)
-        //         asrSessionHandler.startAudio()
-        //     }
-        // })
-
-        // socket.on('asrAudio', (data: Buffer) => {
-        //     console.log(`on asrAudio`, data)
-        //     if (data) {
-        //         ConnectionManager.getInstance().onConnectionEvent(ConnectionType.DEVICE, socket, ConnectionEventType.AUDIO_BYTES_FROM, data.length)
-        //         asrSessionHandler.provideAudio(data)
-        //     } else {
-        //         console.log(`on asrAudio: NOT sending empty audio data.`)
-        //     }
-        // })
-
-        // socket.on('asrAudioEnd', () => {
-        //     console.log(`on asrAudioEnd`)
-        //     asrSessionHandler.endAudio()
-        // })
 
         // time sync
 

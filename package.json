@@ -1,8 +1,8 @@
 {
-  "name": "microservice-template",
+  "name": "robokit-cloud-skill",
   "version": "0.0.1",
   "private": true,
-  "description": "Microservice template",
+  "description": "Robokit Cloud Skill",
   "main": "/dist/index.js",
   "watch": {
     "build": {
@@ -26,8 +26,8 @@
     "test": "echo TODO",
     "test:ci": "echo TODO",
     "clean": "rm -rf dist node_modules",
-    "docker:build": "docker build -t microservice-template .",
-    "docker:run": "docker run -it --rm -p 8000:8000 --env-file ./.env microservice-template"
+    "docker:build": "docker build -t robokit-cloud-skill .",
+    "docker:run": "docker run -it --rm -p 8083:8083 --env-file ./.env robokit-cloud-skill"
   },
   "dependencies": {
     "cookie-parser": "^1.4.6",
@@ -72,10 +72,10 @@
   },
   "repository": {
     "type": "git",
-    "url": "git@github.com:wwlib/microservice-template.git"
+    "url": "git@github.com:wwlib/robokit-cloud-skill.git"
   },
   "keywords": [
-    "microservice,jwt,jsonwebtoken"
+    "microservice,jwt,jsonwebtoken,robokit,cloud,skill"
   ],
   "author": "Andrew Rapo <andrew@wwlib.org> (http://wwlib.org/)",
   "license": "MIT"

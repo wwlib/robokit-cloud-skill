@@ -1,6 +1,8 @@
-# microservice-template
+# robokit-cloud-skill
 
-A template for creating node microservices with:
+An example cloud skill for use with the robokit-conitive-hub
+
+Based on wwlib/microservice-template: A template for creating node microservices with:
 - express route handling
 - get/post REST api routes
 - WebSocket api routes
@@ -8,7 +10,7 @@ A template for creating node microservices with:
 - JWT auth
 - docker support
 
-### medium article
+### medium article (about wwlib/microservice-template)
 
 See: [A Nodejs Microservice Template](https://medium.com/@andrew.rapo/a-nodejs-microservice-template-36f080fe1418)
 
@@ -33,16 +35,16 @@ For an example customization of this template, see:
 
 ### docker
 
-`docker build -t microservice-template .` 
+`docker build -t robokit-cloud-skill .` 
 - or `npm run docker:build`
 
 Copy `.env-example` to `.env`
 ```
-SERVER_PORT=8000
+SERVER_PORT=8083
 USE_AUTH=true
 ```
 
-`docker run -it --rm -p 8000:8000 --env-file ./.env microservice-template` 
+`docker run -it --rm -p 8083:8083 --env-file ./.env robokit-cloud-skill` 
 - or `npm run docker:run`
 
 
@@ -51,32 +53,28 @@ USE_AUTH=true
 Without auth:
 
 ```sh
-curl --location --request POST 'http://localhost:8000/post' \
+curl --location --request POST 'http://localhost:8083/post' \
      --header 'Content-Type: application/json' \
-     --data-raw '{
-       "utterance": "hello"
-     }'
+     --data-raw '{ "message": "hello" }'
 ```
 
-With auth
+With auth (usinf access_token from the Authentication call, below)
 
 ```sh
-curl --location --request POST 'http://localhost:8000/post' \
+curl --location --request POST 'http://localhost:8083/post' \
      --header 'Content-Type: application/json' \
      --header 'Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiJ1c2VyMSIsImF1dGgiOnsicGVybWlzc2lvbnMiOlt7InNjb3BlcyI6WyJyZWFkIl0sInJlc291cmNlIjoiZXhhbXBsZSJ9XX0sImlhdCI6MTY1MzM2MTQ3OX0.WMbG7o7CaKOf6H7djUpZ7aylvUeYw3N8cdn1K1FrN8A' \
-     --data-raw '{
-       "utterance": "hello"
-     }'
+     --data-raw '{ "message": "hello" }'
 ```
 
 ```json
-{"status":"OK","utterance":"hello","accountId":"user1"}
+{"status":"OK","message":"hello"}
 ```
 
-
+Authentication
 
 ```sh
-curl --location --request POST 'http://localhost:8000/auth' \
+curl --location --request POST 'http://localhost:8083/auth' \
      --header 'Content-Type: application/json' \
      --data-raw '{
        "accountId": "user1",
@@ -90,7 +88,7 @@ curl --location --request POST 'http://localhost:8000/auth' \
 
 ### http - dashboard
 
-http://localhost:8000/
+http://localhost:8083/
 
 
 ### socket client
@@ -108,7 +106,7 @@ This will start a REPL that will accept and echo prompts.
 client connected
 ctrl-c to quit
 > hello
-hello
+echo hello
 ```
 
 Anything typed at the `>` prompt will be echoed.
