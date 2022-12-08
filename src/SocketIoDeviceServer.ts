@@ -40,7 +40,7 @@ export const setupSocketIoDeviceServer = (httpServer: HTTPServer, path: string):
     ioSocketServer.on('connection', function (socket: any) {
         console.log(`socket.io: on DEVICE connection:`, socket.id)
         const connection = ConnectionManager.getInstance().addConnection(ConnectionType.DEVICE, socket, socket.data.accountId)
-        socket.emit('message', { message: 'A new DEVICE has joined!' })
+        socket.emit('message', { source: 'CS:RCS', event: 'handshake', message: 'DEVICE connection accepted' })
 
         socket.on('command', (command: RCSCommand) => {
             if (command.type !== 'sync') {
@@ -51,7 +51,9 @@ export const setupSocketIoDeviceServer = (httpServer: HTTPServer, path: string):
             if (command.type === RCSCommandType.sync && command.name === RCSCommandName.syncOffset) {
                 if (command.payload && typeof command.payload.syncOffset === 'number' ) {
                     if (connection) {
-                        console.log(`updating syncOffset for device socket: ${socket.id}`)
+                        if (process.env.DEBUG === 'true') {
+                            console.log(`updating syncOffset for device socket: ${socket.id}`)
+                        }
                         connection.onSyncOffset(command.payload.syncOffset)
                     }
                 }
@@ -60,12 +62,14 @@ export const setupSocketIoDeviceServer = (httpServer: HTTPServer, path: string):
             }
         })
 
-        socket.on('message', (message: string) => {
-            console.log(`on message: ${message}`, socket.id, socket.data.accountId)
+        socket.on('message', (messageData: any) => {
+            console.log(`on message:`, messageData, socket.id, socket.data.accountId)
             ConnectionManager.getInstance().onAnalyticsEvent(ConnectionType.DEVICE, socket, ConnectionEventType.MESSAGE_FROM)
             ConnectionManager.getInstance().onAnalyticsEvent(ConnectionType.CONTROLLER, socket, ConnectionEventType.MESSAGE_TO)
-            ConnectionManager.getInstance().broadcastDeviceMessageToSubscriptionsWithAccountId(socket.data.accountId, { message: message })
-            socket.emit('message', { message: 'echo', data: message })
+            ConnectionManager.getInstance().broadcastDeviceMessageToSubscriptionsWithAccountId(socket.data.accountId, { message: messageData })
+            socket.emit('message', { source: 'CS:RCS', event: 'reply', data: {
+                reply: `I'm sorry. I don't yet know how to help with: ${messageData.text}`
+            } }) // TODO should be a command
         })
 
         socket.once('disconnect', function (reason: string) {

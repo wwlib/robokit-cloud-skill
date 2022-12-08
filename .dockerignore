@@ -2,4 +2,10 @@ dist
 hide
 node_modules
 .env
+example.env
+compose.env
+docker-compose.yml
+Dockerfile
 notebooks
+tools
+README.md

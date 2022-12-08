@@ -1,4 +1,4 @@
-FROM node:14-buster-slim
+FROM node:16-alpine AS builder
 
 ARG BUILD_DIR="/usr/app"
 ARG CONTAINER_USER="node"
@@ -13,4 +13,13 @@ COPY --chown=${CONTAINER_USER} . .
 RUN npm install
 RUN npm run build
 
+# keep going without src
+FROM node:16-alpine
+
+WORKDIR /usr/app
+COPY --from=builder /usr/app/dist/ /usr/app/dist/
+COPY --from=builder /usr/app/node_modules/ /usr/app/node_modules/
+COPY --from=builder /usr/app/public/ /usr/app/public/
+
 ENTRYPOINT ["node", "dist/index.js"]
+# ENTRYPOINT ["bash"]

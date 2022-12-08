@@ -35,7 +35,7 @@ async function getToken() {
                     resolve(response.data.access_token);
                 })
                 .catch(function (error) {
-                    console.log(error);
+                    console.log('CLI: error', error);
                     reject();
                 });
 
@@ -52,8 +52,8 @@ function connect(token) {
         output: process.stdout
     });
 
-    console.log(`URL:`, process.env.URL);
-    console.log('token:', token);
+    console.log(`CLI: URL:`, process.env.URL);
+    console.log('CLI: token:', token);
     const socket = io(process.env.URL, {
         path: process.env.DEVICE_SOCKET_PATH,
         extraHeaders: {
@@ -66,7 +66,7 @@ function connect(token) {
 
     onSynchronizedClockUpdate = (timeData) => {
         if (showTimeEvents) {
-            console.log(`clockUpdate: ${timeData.simpleFormat}`)
+            console.log(`CLI: clockUpdate: ${timeData.simpleFormat}`)
         }
     }
 
@@ -88,7 +88,7 @@ function connect(token) {
 
     ts.on('change', function (offset) {
         if (showTimeEvents) {
-            console.log('timesync: changed offset: ' + offset + ' ms');
+            console.log('CLI: timesync: changed offset: ' + offset + ' ms');
         }
         if (synchronizedClock) {
             synchronizedClock.onSyncOffsetChanged(offset)
@@ -124,11 +124,11 @@ function connect(token) {
     // socket messages
 
     socket.on("connect", () => {
-        console.log(socket.id); // "G5p5..."
+        console.log('CLI: socket id', socket.id); // "G5p5..."
     });
 
     socket.on('disconnect', function () {
-        console.log(`on disconnect. closing...`);
+        console.log(`CLI: on disconnect. closing...`);
         if (synchronizedClock) {
             synchronizedClock.dispose()
             synchronizedClock = undefined
@@ -137,22 +137,20 @@ function connect(token) {
     });
 
     rcs.CommandProcessor.getInstance().on('commandCompleted', (commandAck) => {
-        console.log(`command completed:`, commandAck)
+        console.log(`CLI: command completed:`, commandAck)
         socket.emit('command', commandAck)
     })
 
     socket.on('command', function (command) {
-        console.log('command', command);
+        console.log('CLI: command', command);
         rcs.CommandProcessor.getInstance().processCommand(command)
         ask("> ");
     });
 
     socket.on('message', function (data) {
-        console.log(data.message, data.data);
+        console.log('CLI: on message', data);
         ask("> ");
     });
-
-    socket.emit('message', 'CONNECTED');
 
     const ask = (prompt) => {
         rl.question(prompt, function (input) {
@@ -162,7 +160,11 @@ function connect(token) {
                 showTimeEvents = !showTimeEvents
                 ask("> ")
             } else {
-                const messageData = input;
+                const messageData = {
+                    source: 'CLI',
+                    event: 'user-input',
+                    data: { input: input }
+                }
                 socket.emit('message', messageData)
             }
         });
