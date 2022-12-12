@@ -5,10 +5,11 @@ import dotenv from 'dotenv'
 import * as handlers from '@handlers'
 import { ExpressRouterWrapper } from './util/ExpressRouterWrapper'
 // import { WSSRoutes, setupWebSocketServer } from './util/WebSocketServerWrapper'
-import { setupSocketIoDeviceServer } from './SocketIoDeviceServer'
+import { setupSocketIoSkillClientServer } from './SocketIoSkillClientServer'
 
 const cors = require('cors');
 const cookieParser = require("cookie-parser");
+const errorhandler = require('errorhandler')
 
 dotenv.config()
 
@@ -26,6 +27,11 @@ const main = async () => {
     origin: 'http://localhost:3000',
     credentials: true,
   }));
+
+  // ErrorHandler in DEBUG mode
+  if (process.env.DEBUG === 'true') {
+    app.use(errorhandler())
+  }
 
   // HealthCheck
   app.get('/healthcheck', handlers.HealthCheckHandler)
@@ -72,18 +78,26 @@ const main = async () => {
   // ]
   // const wss: WebSocketServer = setupWebSocketServer(httpServer, wssRoutes, serviceOptions)
 
-  setupSocketIoDeviceServer(httpServer, '/socket-hub/')
+  setupSocketIoSkillClientServer(httpServer, '/socket-hub/')
 
   process.on('SIGINT', () => {
-    console.warn('Received interrupt, shutting down')
+    console.error('Received interrupt, shutting down')
     httpServer.close()
     process.exit(0)
   })
 
   httpServer.listen(port, () => {
-    console.info(`HTTP/WS server is ready and listening at port ${port}!`)
+    console.log(`HTTP/WS server is ready and listening at port ${port}!`)
   })
 }
+
+process.on('uncaughtException', function (exception) {
+  console.error(exception);
+});
+
+process.on('unhandledRejection', (reason, p) => {
+  console.error("Unhandled Rejection at: Promise ", p, " reason: ", reason);
+});
 
 main().catch((error) => {
   console.error('Detected an unrecoverable error. Stopping!')

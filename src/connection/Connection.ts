@@ -5,6 +5,7 @@ export enum ConnectionType {
     DEVICE = 'device',
     APP = 'app',
     CONTROLLER = 'controller',
+    SKILL_CLIENT = 'skill_client',
 }
 
 export enum ConnectionEventType {
@@ -15,6 +16,8 @@ export enum ConnectionEventType {
     AUDIO_BYTES_FROM = 'audio_bytes_from'
 }
 
+export type ConnectionEventName = string
+
 export default class Connection {
 
     private _type: ConnectionType;
@@ -24,6 +27,7 @@ export default class Connection {
     private _syncOffset: number;
     private _lastSyncTimestamp: number;
     private _commandCountFrom: number;
+    private _commandCountFromByType: any;
     private _commandCountFromQuota: number;
     private _commandCountTo: number;
     private _messageCountFrom: number;
@@ -41,6 +45,7 @@ export default class Connection {
         this._syncOffset = 0
         this._lastSyncTimestamp = 0
         this._commandCountFrom = 0
+        this._commandCountFromByType = {}
         this._commandCountFromQuota = 0
         this._commandCountTo = 0
         this._messageCountFrom = 0
@@ -61,7 +66,8 @@ export default class Connection {
 
     toString(): string {
         const syncOffset = Math.round(this._syncOffest * 1000) / 1000
-        return `${this._accountId}: [${this._socketId.substring(0, 6)}] syncOffset: ${syncOffset} ms, commandsFrom: ${this._commandCountFrom}. messagesFrom: ${this._messageCountFrom}, audioFrom: ${this._audioBytesFrom}`
+        const commandCountFromByType: string = JSON.stringify(this._commandCountFromByType)
+        return `${this._accountId}: [${this._socketId.substring(0, 6)}] syncOffset: ${syncOffset} ms, commandsFrom: ${this._commandCountFrom}, commandCountFromByType: ${commandCountFromByType}, messagesFrom: ${this._messageCountFrom}, audioFrom: ${this._audioBytesFrom}`
     }
 
     sendMessage(message: unknown) {
@@ -76,10 +82,17 @@ export default class Connection {
         }
     }
 
-    onEvent(eventType: ConnectionEventType, data: string | number) {
+    onAnalyticsEvent(eventType: ConnectionEventType, data: string | number) {
         switch (eventType) {
             case ConnectionEventType.COMMAND_FROM:
                 this._commandCountFrom += 1
+                if (typeof data === 'string') {
+                    if (!this._commandCountFromByType[data]) {
+                        this._commandCountFromByType[data] = 1
+                    } else {
+                        this._commandCountFromByType[data] += 1
+                    }
+                }
                 break;
             case ConnectionEventType.COMMAND_TO:
                 this._commandCountTo += 1

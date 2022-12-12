@@ -8,28 +8,27 @@ import { ConnectionEventType, ConnectionType } from 'src/connection/Connection'
 import { RCSCommand, RCSCommandType, RCSCommandName } from 'robokit-command-system'
 
 
-export const setupSocketIoDeviceServer = (httpServer: HTTPServer, path: string): SocketIoServer => {
+export const setupSocketIoSkillClientServer = (httpServer: HTTPServer, path: string): SocketIoServer => {
     const ioSocketServer = new SocketIoServer(httpServer, {
         path: path,
     })
 
     ioSocketServer.use(function (socket: any, next: any) {
         var auth = socket.request.headers.authorization
-        // console.log("auth", auth)
         if (auth) {
             const token = auth.replace("Bearer ", "")
-            console.log("auth token", token)
             if (!token) {
-                return next(new Error('socket.io DEVICE connection: unauthorized: Missing token.'))
+                return next(new Error('SkillClientServer: SKILL_CLIENT connection: unauthorized: Missing token.'))
             }
             let decodedAccessToken: any
             try {
                 decodedAccessToken = JwtAuth.decodeAccessToken(token)
-                console.log(decodedAccessToken)
+                // console.log(decodedAccessToken)
                 socket.data.accountId = decodedAccessToken.accountId
             } catch (error: any) {
+                // TODO: remove log and throw
                 console.error(error)
-                return next(new Error('socket.io DEVICE connection: unauthorized: Invalid token.'))
+                return next(new Error('SkillClientServer: SKILL_CLIENT connection: unauthorized: Invalid token.'))
             }
             return next()
         } else {
@@ -38,49 +37,47 @@ export const setupSocketIoDeviceServer = (httpServer: HTTPServer, path: string):
     })
 
     ioSocketServer.on('connection', function (socket: any) {
-        console.log(`socket.io: on DEVICE connection:`, socket.id)
-        const connection = ConnectionManager.getInstance().addConnection(ConnectionType.DEVICE, socket, socket.data.accountId)
-        socket.emit('message', { source: 'CS:RCS', event: 'handshake', message: 'DEVICE connection accepted' })
+        console.log(`SkillClientServer: on SKILL_CLIENT connection:`, socket.id)
+        const connection = ConnectionManager.getInstance().addConnection(ConnectionType.SKILL_CLIENT, socket, socket.data.accountId)
+        socket.emit('message', { source: 'CS:RCS', event: 'handshake', message: 'SKILL_CLIENT connection accepted' })
 
         socket.on('command', (command: RCSCommand) => {
-            if (command.type !== 'sync') {
-                console.log(`DeviceServer: on command:`, socket.id, socket.data.accountId, command)
-            }
-            ConnectionManager.getInstance().onAnalyticsEvent(ConnectionType.DEVICE, socket, ConnectionEventType.COMMAND_FROM)
-            ConnectionManager.getInstance().onAnalyticsEvent(ConnectionType.CONTROLLER, socket, ConnectionEventType.COMMAND_TO)
+            ConnectionManager.getInstance().onAnalyticsEvent(ConnectionType.SKILL_CLIENT, socket, ConnectionEventType.COMMAND_FROM, command.type)
             if (command.type === RCSCommandType.sync && command.name === RCSCommandName.syncOffset) {
                 if (command.payload && typeof command.payload.syncOffset === 'number' ) {
                     if (connection) {
-                        if (process.env.DEBUG === 'true') {
-                            console.log(`updating syncOffset for device socket: ${socket.id}`)
+                        if (process.env.DEBUG_CLOCK_SYNC === 'true') {
+                            console.log(`DEBUG_CLOCK_SYNC: SkillClientServer: updating syncOffset for SKILL_CLIENT socket: ${socket.id}`)
                         }
                         connection.onSyncOffset(command.payload.syncOffset)
                     }
                 }
-            } else {
-                ConnectionManager.getInstance().broadcastDeviceCommandToSubscriptionsWithAccountId(socket.data.accountId, command)
-            }
+            } 
+            // else {
+            //     ConnectionManager.getInstance().broadcastDeviceCommandToSubscriptionsWithAccountId(socket.data.accountId, command)
+            // }
         })
 
         socket.on('message', (messageData: any) => {
-            console.log(`on message:`, messageData, socket.id, socket.data.accountId)
-            ConnectionManager.getInstance().onAnalyticsEvent(ConnectionType.DEVICE, socket, ConnectionEventType.MESSAGE_FROM)
-            ConnectionManager.getInstance().onAnalyticsEvent(ConnectionType.CONTROLLER, socket, ConnectionEventType.MESSAGE_TO)
-            ConnectionManager.getInstance().broadcastDeviceMessageToSubscriptionsWithAccountId(socket.data.accountId, { message: messageData })
+            if (process.env.DEBUG === 'true') {
+                console.log(`DEBUG: SkillClientServer: on message:`, messageData, socket.id, socket.data.accountId)
+            }
+            ConnectionManager.getInstance().onAnalyticsEvent(ConnectionType.SKILL_CLIENT, socket, ConnectionEventType.MESSAGE_FROM, messageData.event)
+            // ConnectionManager.getInstance().broadcastDeviceMessageToSubscriptionsWithAccountId(socket.data.accountId, { message: messageData })
             socket.emit('message', { source: 'CS:RCS', event: 'reply', data: {
                 reply: `I'm sorry. I don't yet know how to help with: ${messageData.text}`
             } }) // TODO should be a command
         })
 
         socket.once('disconnect', function (reason: string) {
-            console.log(`on DEVICE disconnect: ${reason}: ${socket.id}`)
+            console.log(`SkillClientServer: on SKILL_CLIENT disconnect: ${reason}: ${socket.id}`)
             ConnectionManager.getInstance().removeConnection(ConnectionType.DEVICE, socket)
         })
 
         // time sync
 
         socket.on('timesync', function (data: any) {
-            // console.log('device timesync message:', data)
+            // console.log('SKILL_CLIENT timesync message:', data)
             socket.emit('timesync', {
                 id: data && 'id' in data ? data.id : null,
                 result: Date.now()
