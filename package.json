@@ -41,7 +41,7 @@
     "jsonwebtoken": "^8.5.1",
     "npm-watch": "^0.11.0",
     "pino-pretty": "^7.1.0",
-    "robokit-command-system": "https://github.com/wwlib/robokit-command-system#6860c1d209576701d1297e2528108de603c351a7",
+    "robokit-command-system": "https://github.com/wwlib/robokit-command-system#100e927a9336562f6e840f3961dc91ac8009b3d4",
     "socket.io": "^4.5.2",
     "ws": "^8.6.0"
   },

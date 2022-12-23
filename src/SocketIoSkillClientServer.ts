@@ -41,32 +41,31 @@ export const setupSocketIoSkillClientServer = (httpServer: HTTPServer, path: str
         const connection = ConnectionManager.getInstance().addConnection(ConnectionType.SKILL_CLIENT, socket, socket.data.accountId)
         socket.emit('message', { source: 'CS:RCS', event: 'handshake', message: 'SKILL_CLIENT connection accepted' })
 
-        socket.on('command', (command: RCSCommand) => {
-            ConnectionManager.getInstance().onAnalyticsEvent(ConnectionType.SKILL_CLIENT, socket, ConnectionEventType.COMMAND_FROM, command.type)
-            if (command.type === RCSCommandType.sync && command.name === RCSCommandName.syncOffset) {
-                if (command.payload && typeof command.payload.syncOffset === 'number' ) {
-                    if (connection) {
-                        if (process.env.DEBUG_CLOCK_SYNC === 'true') {
-                            console.log(`DEBUG_CLOCK_SYNC: SkillClientServer: updating syncOffset for SKILL_CLIENT socket: ${socket.id}`)
-                        }
-                        connection.onSyncOffset(command.payload.syncOffset)
-                    }
-                }
-            } 
-            // else {
-            //     ConnectionManager.getInstance().broadcastDeviceCommandToSubscriptionsWithAccountId(socket.data.accountId, command)
-            // }
-        })
+        // TODO: do skills receive commands? Needs to be defined.
+        // socket.on('command', (command: RCSCommand) => {
+        //     ConnectionManager.getInstance().onAnalyticsEvent(ConnectionType.SKILL_CLIENT, socket, ConnectionEventType.COMMAND_FROM, command.type)
+        //     // TODO: process skill-related commands here
+        // })
 
-        socket.on('message', (messageData: any) => {
+        socket.on('asrEnd', (messageData: any) => {
             if (process.env.DEBUG === 'true') {
-                console.log(`DEBUG: SkillClientServer: on message:`, messageData, socket.id, socket.data.accountId)
+                console.log(`DEBUG: SkillClientServer: on asrEnd:`, messageData, socket.id, socket.data.accountId)
             }
             ConnectionManager.getInstance().onAnalyticsEvent(ConnectionType.SKILL_CLIENT, socket, ConnectionEventType.MESSAGE_FROM, messageData.event)
-            // ConnectionManager.getInstance().broadcastDeviceMessageToSubscriptionsWithAccountId(socket.data.accountId, { message: messageData })
             socket.emit('message', { source: 'CS:RCS', event: 'reply', data: {
                 reply: `I'm sorry. I don't yet know how to help with: ${messageData.text}`
-            } }) // TODO should be a command
+            } }) // TODO: define hub-skill message protocol
+        })
+
+        // TODO: implement response based on NLU intent & entities
+        socket.on('nluEnd', (messageData: any) => {
+            if (process.env.DEBUG === 'true') {
+                console.log(`DEBUG: SkillClientServer: on nluEnd:`, messageData, socket.id, socket.data.accountId)
+            }
+            // ConnectionManager.getInstance().onAnalyticsEvent(ConnectionType.SKILL_CLIENT, socket, ConnectionEventType.MESSAGE_FROM, messageData.event)
+            // socket.emit('message', { source: 'CS:RCS', event: 'reply', data: {
+            //     reply: `I'm sorry. I don't yet know how to help with the intent: ${messageData.intentId}`
+            // } }) // TODO: define hub-skill message protocol
         })
 
         socket.once('disconnect', function (reason: string) {
@@ -75,14 +74,7 @@ export const setupSocketIoSkillClientServer = (httpServer: HTTPServer, path: str
         })
 
         // time sync
-
-        socket.on('timesync', function (data: any) {
-            // console.log('SKILL_CLIENT timesync message:', data)
-            socket.emit('timesync', {
-                id: data && 'id' in data ? data.id : null,
-                result: Date.now()
-            })
-        })
+        // TODO: the cognitive hub IS the time server, so add clock sync client code
     })
 
     return ioSocketServer
