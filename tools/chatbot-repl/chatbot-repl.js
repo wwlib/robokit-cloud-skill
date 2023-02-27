@@ -25,8 +25,7 @@ const ask = (prompt) => {
         } else if (input === 'tbd') {
             ask("> ")
         } else {
-            console.log(input)
-
+            // console.log(input)
             let openAiResponse
             try {
                 const completionOptions = {
